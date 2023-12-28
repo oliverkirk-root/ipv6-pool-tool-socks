@@ -1,0 +1,76 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go Build and Release
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.21'
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Generate version number
+      id: version
+      run: echo "::set-output name=version::v$(date +'%Y.%m.%d.%H%M')"
+
+    - name: Build for Linux AMD64
+      run: GOOS=linux GOARCH=amd64 go build -o ipv6-pool-tool-socks-linux-amd64
+
+    - name: Build for Linux ARMv6
+      run: GOOS=linux GOARCH=arm GOARM=6 go build -o ipv6-pool-tool-socks-linux-armv6
+
+    - name: Build for Linux ARMv7
+      run: GOOS=linux GOARCH=arm GOARM=7 go build -o ipv6-pool-tool-socks-linux-armv7
+
+    - name: Build for Linux ARM64
+      run: GOOS=linux GOARCH=arm64 go build -o ipv6-pool-tool-socks-linux-arm64
+
+    - name: Build for macOS
+      run: GOOS=darwin GOARCH=amd64 go build -o ipv6-pool-tool-socks-darwin-amd64
+
+    - name: Build for Windows
+      run: GOOS=windows GOARCH=amd64 go build -o ipv6-pool-tool-socks-windows-amd64.exe
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: binaries
+        path: |
+          ipv6-pool-tool-socks-linux-amd64
+          ipv6-pool-tool-socks-linux-armv6
+          ipv6-pool-tool-socks-linux-armv7
+          ipv6-pool-tool-socks-linux-arm64
+          ipv6-pool-tool-socks-darwin-amd64
+          ipv6-pool-tool-socks-windows-amd64.exe
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release ${{ steps.version.outputs.version }}
+        tag_name: ${{ steps.version.outputs.version }}
+        draft: false
+        prerelease: false
+        files: |
+          ipv6-pool-tool-socks-linux-amd64
+          ipv6-pool-tool-socks-linux-armv6
+          ipv6-pool-tool-socks-linux-armv7
+          ipv6-pool-tool-socks-linux-arm64
+          ipv6-pool-tool-socks-darwin-amd64
+          ipv6-pool-tool-socks-windows-amd64.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
